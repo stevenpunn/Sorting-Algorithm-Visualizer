@@ -3,14 +3,17 @@ import random
 from createVisuals import createVisuals
 pygame.init()
 
-def draw(createList):
+def draw(createList, sortingAlgorithmName, ascending):
     createList.window.fill(createList.backgroundColor)
 
-    controls = createList.font.render("R - Reset | SPACE - Start Sorting | A - Ascending | D - Descending", 1, createList.BLACK)
-    createList.window.blit(controls, (createList.width/2 - controls.get_width()/2, 5))
+    title = createList.largeFont.render(f"{sortingAlgorithmName} - {'Ascending' if ascending else 'Descending'}", 1, createList.BLACK)
+    createList.window.blit(title, (createList.width/2 - title.get_width()/2, 5))
 
-    sortingAlgos = createList.font.render("I - Insertion Sort | B - Bubble Sort | M - Merge Sort", 1, createList.BLACK)
-    createList.window.blit(sortingAlgos, (createList.width/2 - sortingAlgos.get_width()/2, 35))
+    controls = createList.font.render("R - Reset | SPACE - Start Sorting | A - Ascending | D - Descending", 1, createList.BLACK)
+    createList.window.blit(controls, (createList.width/2 - controls.get_width()/2, 35))
+
+    sortingAlgos = createList.font.render("1 - Insertion Sort | 2- Bubble Sort | 3 - Merge Sort", 1, createList.BLACK)
+    createList.window.blit(sortingAlgos, (createList.width/2 - sortingAlgos.get_width()/2, 55))
 
     draw_list(createList)
     pygame.display.update()
@@ -49,6 +52,24 @@ def draw_list(createList, colorSwap={}, clearBackground = False):
     if clearBackground:
         pygame.display.update()
 
+def insertionSort(createList, ascending = True):
+    myList = createList.myList
+    
+    for i in range(1, len(myList)):
+        key = myList[i]                 # stores current index in memory
+        while True:
+            ascending_sort = i > 0 and myList[i - 1] > key and ascending
+            descending_sort = i > 0 and myList[i - 1] < key and not ascending
+
+            if not ascending_sort and not descending_sort:
+                break
+            myList[i] = myList[i - 1]
+            i = i - 1
+            myList[i] = key
+            draw_list(createList, {i:createList.GREEN, i - 1: createList.RED}, True)
+            yield True
+    return myList
+
 def bubbleSort(createList, ascending = True):
     myList = createList.myList
 
@@ -66,7 +87,6 @@ def bubbleSort(createList, ascending = True):
 def main():
     run = True
     runtime = pygame.time.Clock()
-
     n = 50
     min_val = 0
     max_val = 100
@@ -75,20 +95,18 @@ def main():
     createList = createVisuals(800, 600, myList)
     sorting = False
     ascending = True
-
-    sortingAlgorithms = bubbleSort
-    sortingAlgorithmName = "Bubble Sort"
-    sortingAlgorithmGenerator = None
+    sortingAlgorithmName = "Select Sorting Algorithm"
+    sortingAlgorithms = None
 
     while run:
-        runtime.tick(60)
+        runtime.tick(60)            # adjust speed of sorting
         if sorting:
             try:
                 next(sortingAlgorithmGenerator)
             except StopIteration:
                     sorting = False
         else:
-            draw(createList)
+            draw(createList, sortingAlgorithmName, ascending)
 
         pygame.display.update()
         for event in pygame.event.get():
@@ -102,14 +120,20 @@ def main():
                 myList = generateList(n, min_val, max_val)
                 createList.set_list(myList)
                 sorting = False
-            elif event.key == pygame.K_SPACE and sorting == False:
-                sorting = True
-                sortingAlgorithmGenerator = sortingAlgorithms(createList, ascending)
+            elif event.key == pygame.K_SPACE and not sorting:
+                if sortingAlgorithms is None:
+                    print ("No sorting algorithm is selected")
+                else:
+                    sorting = True
+                    sortingAlgorithmGenerator = sortingAlgorithms(createList, ascending)
             elif event.key == pygame.K_a and not sorting:
                 ascending = True
             elif event.key == pygame.K_d and not sorting:
                 ascending = False
-            elif event.key == pygame.K_b and not sorting:
+            elif event.key == pygame.K_1 and not sorting:
+                sortingAlgorithms = insertionSort
+                sortingAlgorithmName = "Insertion Sort" 
+            elif event.key == pygame.K_2 and not sorting:
                 sortingAlgorithms = bubbleSort
                 sortingAlgorithmName = "Bubble Sort"
 
