@@ -2,7 +2,7 @@ import pygame
 import random
 import math
 pygame.init()
-#
+
 # defining global values and create visualization blocks
 class createVisuals:
     BLACK = 0, 0, 0
