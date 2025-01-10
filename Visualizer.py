@@ -6,13 +6,13 @@ pygame.init()
 def draw(createList, sortingAlgorithmName, ascending):
     createList.window.fill(createList.backgroundColor)
 
-    title = createList.largeFont.render(f"{sortingAlgorithmName} - {'Ascending' if ascending else 'Descending'}", 1, createList.BLACK)
+    title = createList.font.render(f"{sortingAlgorithmName} - {'Ascending' if ascending else 'Descending'}", 1, createList.BLACK)
     createList.window.blit(title, (createList.width/2 - title.get_width()/2, 5))
 
     controls = createList.font.render("R - Reset | SPACE - Start Sorting | A - Ascending | D - Descending", 1, createList.BLACK)
     createList.window.blit(controls, (createList.width/2 - controls.get_width()/2, 35))
 
-    sortingAlgos = createList.font.render("1 - Insertion Sort | 2- Bubble Sort | 3 - Merge Sort", 1, createList.BLACK)
+    sortingAlgos = createList.font.render("1 - Bubble Sort | 2 - Insertion Sort | 3 - Quick Sort", 1, createList.BLACK)
     createList.window.blit(sortingAlgos, (createList.width/2 - sortingAlgos.get_width()/2, 55))
 
     draw_list(createList)
@@ -52,6 +52,20 @@ def draw_list(createList, colorSwap={}, clearBackground = False):
     if clearBackground:
         pygame.display.update()
 
+def bubbleSort(createList, ascending = True):
+    myList = createList.myList
+
+    for i in range(len(myList) -1):
+        for j in range(len(myList) - 1 -i):
+            num1 = myList[j]
+            num2 = myList[j + 1]
+
+            if (num1 > num2 and ascending) or (num1 < num2 and not ascending):
+                myList[j], myList[j+1] = myList[j+1], myList[j]
+                draw_list(createList, {j: createList.GREEN, j+1: createList.RED}, True)
+                yield True                  # yield allows to iterate and pause sorting
+    return myList
+
 def insertionSort(createList, ascending = True):
     myList = createList.myList
     
@@ -70,19 +84,31 @@ def insertionSort(createList, ascending = True):
             yield True
     return myList
 
-def bubbleSort(createList, ascending = True):
+def quickSort(createList, ascending = True):
     myList = createList.myList
 
-    for i in range(len(myList) -1):
-        for j in range(len(myList) - 1 -i):
-            num1 = myList[j]
-            num2 = myList[j + 1]
+    def partition(start, end, ascending):
+        pivot = myList[end]
+        i = start -1
 
-            if (num1 > num2 and ascending) or (num1 < num2 and not ascending):
-                myList[j], myList[j+1] = myList[j+1], myList[j]
-                draw_list(createList, {j: createList.GREEN, j+1: createList.RED}, True)
-                yield True                  # yield allows to iterate and pause sorting
-    return myList
+        for j in range(start, end):
+            if (myList[j] <= pivot and ascending) or (myList[j] >= pivot and not ascending):
+                i += 1
+                myList[i], myList[j] = myList[j], myList[i]
+                draw_list(createList, {i: createList.GREEN, j: createList.RED}, True)
+                yield True
+        
+        myList[i + 1], myList[end] = myList[end], myList[i + 1]
+        draw_list(createList, {i + 1: createList.BLUE, end: createList.RED}, True)
+        yield True
+        return i+1
+    
+    def sorter(start, end, ascending):
+        if start < end:
+            pivotPosition = yield from partition(start, end, ascending)     # partition values to find pivot index]\
+            yield from sorter(start, pivotPosition - 1, ascending)
+            yield from sorter(pivotPosition + 1, end, ascending)
+    yield from sorter(0, len(myList) -1, ascending)
 
 def main():
     run = True
@@ -94,13 +120,14 @@ def main():
     myList = generateList(n, min_val, max_val)
     createList = createVisuals(800, 600, myList)
     sorting = False
+    paused = False
     ascending = True
     sortingAlgorithmName = "Select Sorting Algorithm"
     sortingAlgorithms = None
 
     while run:
-        runtime.tick(60)            # adjust speed of sorting
-        if sorting:
+        runtime.tick(100)            # adjust speed of sorting
+        if sorting and not paused:
             try:
                 next(sortingAlgorithmGenerator)
             except StopIteration:
@@ -120,22 +147,28 @@ def main():
                 myList = generateList(n, min_val, max_val)
                 createList.set_list(myList)
                 sorting = False
-            elif event.key == pygame.K_SPACE and not sorting:
-                if sortingAlgorithms is None:
-                    print ("No sorting algorithm is selected")
-                else:
+            elif event.key == pygame.K_SPACE:
+                if sorting:
+                    paused = not paused
+                elif sortingAlgorithms is not None:
                     sorting = True
+                    paused = False
                     sortingAlgorithmGenerator = sortingAlgorithms(createList, ascending)
+                else:
+                    print("No Sorting Algorithm Selected!")
             elif event.key == pygame.K_a and not sorting:
                 ascending = True
             elif event.key == pygame.K_d and not sorting:
                 ascending = False
             elif event.key == pygame.K_1 and not sorting:
-                sortingAlgorithms = insertionSort
-                sortingAlgorithmName = "Insertion Sort" 
-            elif event.key == pygame.K_2 and not sorting:
                 sortingAlgorithms = bubbleSort
                 sortingAlgorithmName = "Bubble Sort"
+            elif event.key == pygame.K_2 and not sorting:
+                sortingAlgorithms = insertionSort
+                sortingAlgorithmName = "Insertion Sort"
+            elif event.key == pygame.K_3 and not sorting:
+                sortingAlgorithms = quickSort
+                sortingAlgorithmName = "Quick Sort"
 
     pygame.quit()
     
