@@ -147,18 +147,22 @@ def main():
     ascending = True
     sortingAlgorithmName = "Select Sorting Algorithm"
     sortingAlgorithms = None
+    delay = 100                     # 100ms
 
     while run:
         runtime.tick(60)            # adjust speed of sorting
+
         if sorting and not paused:
             try:
                 next(sortingAlgorithmGenerator)
+                pygame.time.delay(delay)
             except StopIteration:
                     sorting = False
         else:
             title(createList, sortingAlgorithmName, ascending)
 
         pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -195,6 +199,12 @@ def main():
             elif event.key == pygame.K_4 and not sorting:
                 sortingAlgorithms = selectionSort
                 sortingAlgorithmName = "Selection Sort"
+            elif event.key == pygame.K_UP:          # reduces delay, increases speed
+                delay = max(10, delay - 10)         # min delay = 10ms
+                print (f"Speed Increased: Delay = {delay} ms")
+            elif event.key == pygame.K_DOWN:        # increase delay, slows down
+                delay = min(500, delay + 10)        # max delay = 500ms 
+                print (f"Speed Decreased: Delay = {delay} ms")
 
     pygame.quit()
     
