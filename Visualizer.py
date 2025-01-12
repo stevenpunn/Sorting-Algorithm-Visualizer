@@ -12,7 +12,7 @@ def title(createList, sortingAlgorithmName, ascending):
     controls = createList.font.render("R - Reset | SPACE - Start Sorting | A - Ascending | D - Descending", 1, createList.BLACK)
     createList.window.blit(controls, (createList.width/2 - controls.get_width()/2, 35))
 
-    sortingAlgos = createList.font.render("1 - Bubble Sort | 2 - Insertion Sort | 3 - Quick Sort", 1, createList.BLACK)
+    sortingAlgos = createList.font.render("1 - Bubble Sort | 2 - Insertion Sort | 3 - Quick Sort | 4 - Selection Sort", 1, createList.BLACK)
     createList.window.blit(sortingAlgos, (createList.width/2 - sortingAlgos.get_width()/2, 55))
 
     drawBars(createList)
@@ -52,7 +52,7 @@ def drawBars(createList, colorSwap={}, clearBackground = False):
     if clearBackground:
         pygame.display.update()
 
-def bubbleSort(createList, ascending = True):
+def bubbleSort(createList, ascending = True):  
     myList = createList.myList
 
     for i in range(len(myList) -1):
@@ -60,8 +60,8 @@ def bubbleSort(createList, ascending = True):
             num1 = myList[j]
             num2 = myList[j + 1]
 
-            if (num1 > num2 and ascending) or (num1 < num2 and not ascending):
-                myList[j], myList[j+1] = myList[j+1], myList[j]
+            if (num1 > num2 and ascending) or (num1 < num2 and not ascending):  # compare adjacent values
+                myList[j], myList[j+1] = myList[j+1], myList[j]                 # swaps values if one is > than the other
                 drawBars(createList, {j: createList.GREEN, j+1: createList.RED}, True)
                 yield True                  # yield allows to iterate and pause sorting
     return myList
@@ -70,45 +70,68 @@ def insertionSort(createList, ascending = True):
     myList = createList.myList
     
     for i in range(1, len(myList)):
-        key = myList[i]                 # stores current index in memory
+        key = myList[i]                 # current element being inserted into sorted list
         while True:
-            ascending_sort = i > 0 and myList[i - 1] > key and ascending
-            descending_sort = i > 0 and myList[i - 1] < key and not ascending
+            ascending_sort = i > 0 and myList[i - 1] > key and ascending        # key < element to the left
+            descending_sort = i > 0 and myList[i - 1] < key and not ascending   # key > element to the left
 
             if not ascending_sort and not descending_sort:
                 break
-            myList[i] = myList[i - 1]
-            i = i - 1
-            myList[i] = key
-            drawBars(createList, {i:createList.GREEN, i - 1: createList.RED}, True)
+
+            myList[i] = myList[i - 1]               # move larger element to the righ
+            i = i - 1                         
+            myList[i] = key 
+            drawBars(createList, {i:createList.GREEN, i - 1: createList.RED}, True)     # green = current, red = compared
             yield True
     return myList
 
 def quickSort(createList, ascending = True):
     myList = createList.myList
 
+    #create dividing partition
     def partition(start, end, ascending):
         pivot = myList[end]
         i = start -1
-
+        # determines whether an element belongs in the left or right half
         for j in range(start, end):
             if (myList[j] <= pivot and ascending) or (myList[j] >= pivot and not ascending):
                 i += 1
                 myList[i], myList[j] = myList[j], myList[i]
-                drawBars(createList, {i: createList.GREEN, j: createList.RED}, True)
+                drawBars(createList, {i: createList.GREEN, j: createList.RED}, True)        # green = i, red = j
                 yield True
         
         myList[i + 1], myList[end] = myList[end], myList[i + 1]
-        drawBars(createList, {i + 1: createList.BLUE, end: createList.RED}, True)
+        drawBars(createList, {i + 1: createList.BLUE, end: createList.RED}, True)           # red = original, blue = swapped
         yield True
         return i+1
-    
+
     def sorter(start, end, ascending):
         if start < end:
-            pivotPosition = yield from partition(start, end, ascending)     # partition values to find pivot index]\
-            yield from sorter(start, pivotPosition - 1, ascending)
+            pivotPosition = yield from partition(start, end, ascending)     # partition values to find pivot index
+            yield from sorter(start, pivotPosition - 1, ascending)          # sort the left half first
             yield from sorter(pivotPosition + 1, end, ascending)
     yield from sorter(0, len(myList) -1, ascending)
+
+def selectionSort(createList, ascending = True):
+    myList = createList.myList
+    # i = current min, j = current item being traversed
+    for i in range (len(myList)):
+        currentMin = i
+        for j in range(i+1, len(myList)):
+            if (myList[j] < myList[currentMin] and ascending) or (myList[j] > myList[currentMin] and not ascending):
+                currentMin = j 
+            
+            # create highlighted elements for selection bars
+            drawBars(createList, {j: createList.RED, currentMin: createList.GREEN}, True)       # red = current element
+            yield{j: createList.RED, currentMin: createList.GREEN}                              # green = current min    
+        
+        # swap new minumum with current minimum
+        myList[i], myList[currentMin] = myList[currentMin], myList[i]
+        # highlight swapped bars
+        drawBars(createList, {i: createList.BLUE, currentMin: createList.GREEN}, True)          # blue = swapped bar
+        yield{i: createList.BLUE, currentMin: createList.GREEN}
+    # clears bars after finished execution    
+    yield{}
 
 def main():
     run = True
@@ -169,9 +192,11 @@ def main():
             elif event.key == pygame.K_3 and not sorting:
                 sortingAlgorithms = quickSort
                 sortingAlgorithmName = "Quick Sort"
+            elif event.key == pygame.K_4 and not sorting:
+                sortingAlgorithms = selectionSort
+                sortingAlgorithmName = "Selection Sort"
 
     pygame.quit()
     
-
 if __name__ == "__main__":
     main()
