@@ -12,7 +12,7 @@ def title(createList, sortingAlgorithmName, ascending):
     controls = createList.font.render("R - Reset | SPACE - Start Sorting | A - Ascending | D - Descending", 1, createList.BLACK)
     createList.window.blit(controls, (createList.width/2 - controls.get_width()/2, 35))
 
-    sortingAlgos = createList.font.render("1 - Bubble Sort | 2 - Insertion Sort | 3 - Quick Sort | 4 - Selection Sort", 1, createList.BLACK)
+    sortingAlgos = createList.font.render("1 - Bubble Sort | 2 - Insertion Sort | 3 - Quick Sort | 4 - Selection Sort | 5 - Radix Sort", 1, createList.BLACK)
     createList.window.blit(sortingAlgos, (createList.width/2 - sortingAlgos.get_width()/2, 55))
 
     drawBars(createList)
@@ -133,6 +133,40 @@ def selectionSort(createList, ascending = True):
     # clears bars after finished execution    
     yield{}
 
+def radixSort(createList, ascending = True):
+    myList = createList.myList
+
+    # Find max number 
+    maxVal =  max(myList)
+    maxDigits = len(str(maxVal))
+
+    # Define sorting order
+    order = 1 if ascending else -1
+
+    # Perform counting sort for each digit
+    place = 1       # start with least significant digit
+    for _ in range(maxDigits):
+        # create the buckets
+        buckets = [[] for _ in range(10)]
+
+        # Insert elements into buckets
+        for num in myList:
+            digit = (num // place) % 10
+            buckets[digit].append(num)
+
+        # Reconstruct list from buckets
+        index = 0
+        for bucket in (buckets if ascending else reversed(buckets)):
+            for num in bucket:
+                myList[index] = num
+                index += 1
+                drawBars(createList, {index: createList.GREEN}, True)
+                yield True
+
+            # Sort next significant digit
+        place *= 10
+    yield{}
+
 def main():
     run = True
     runtime = pygame.time.Clock()
@@ -147,7 +181,7 @@ def main():
     ascending = True
     sortingAlgorithmName = "Select Sorting Algorithm"
     sortingAlgorithms = None
-    delay = 100                     # 100ms
+    delay = 40                     # 100ms
 
     while run:
         runtime.tick(60)            # adjust speed of sorting
@@ -199,6 +233,9 @@ def main():
             elif event.key == pygame.K_4 and not sorting:
                 sortingAlgorithms = selectionSort
                 sortingAlgorithmName = "Selection Sort"
+            elif event.key == pygame.K_5 and not sorting:
+                sortingAlgorithms = radixSort
+                sortingAlgorithmName = "Radix Sort"
             elif event.key == pygame.K_UP:          # reduces delay, increases speed
                 delay = max(10, delay - 10)         # min delay = 10ms
                 print (f"Speed Increased: Delay = {delay} ms")
